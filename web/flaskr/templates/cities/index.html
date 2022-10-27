@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Cities{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<h1>City Name, Country, Coordinates</h1>
+<a class="action" href="{{ url_for('cities.search_by_coordinates') }}" >Add City</a>
+  {% for city in cities %}
+    <article class="cites">
+      <header>
+        <div>
+          <h1>{{ city.city_name}}, {{ city.city_country }}</h1>
+          <h1> {{ city.city_coord_lat , city.city_coord_long }}</h1>
+          <div class="row">
+            <div class="column">
+              <a class="action" href="{{ url_for('weather.current_weather', city_id=city.city_id) }}">Current Weather</a>
+              <a class="action" href="{{ url_for('weather.current_forecast', city_id=city.city_id) }}">Current Forecast</a>
+            </div>
+            <div class="column">
+              <a class="action" href="{{ url_for('weather.current_weather_dump', city_id=city.city_id) }}">Current Weather Dump</a>
+            <a class="action" href="{{ url_for('weather.forecast_dump', city_id=city.city_id) }}">Forecast Dump</a>
+            </div>
+            <div class="column">
+              <a class="action" href="{{ url_for('weather.import_data', city_id=city.city_id) }}">Import</a>
+            </div>
+            </div>
+        </div>
+      </header>
+    </article>
+    {% if not loop.last %}
+      <hr>
+    {% endif %}
+{% endfor %}
+<hr>
+<a class="action" href="{{ url_for('weather.import_all') }}">Import All</a>
+<hr>
+
+{% endblock %}

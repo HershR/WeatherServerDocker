@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+<!-- add city with hyperlink -->
+{% block header %}
+  <h1>{% block title %}Add City To Track{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<h1>City Name, State, Country</h1>
+  {% for city in cities %}
+    <article class="cites">
+      <header>
+        <div>
+          <h1>{{ city['name'] , city['state'], city['country'] }} {{city['lat'] , city['lon']}}</h1>
+          <a class="action" href="{{ url_for('cities.add', city=city) }}">Add</a>
+        </div>
+      </header>
+    </article>
+    {% if not loop.last %}
+      <hr>
+    {% endif %}
+  {% endfor %}
+  <a class="action" href="{{ url_for('cities.index') }}">Back</a>
+{% endblock %}

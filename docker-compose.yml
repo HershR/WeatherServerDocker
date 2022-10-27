@@ -1,0 +1,37 @@
+version: "3.6"
+services:
+  web:
+    image: hershr/flaskweatherapp
+    restart: always
+    ports:
+      - 5000:5000
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - flask_network
+  proxy:
+    image: hershr/weatherapp_proxy
+    restart: always
+    ports:
+      - 80:80
+    networks:
+      - flask_network
+  db:
+    image: postgres:10
+    restart: always
+    ports:
+      - 5432:5432
+    networks:
+      - flask_network
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+networks:
+  flask_network:
+
+volumes:
+  postgres_data:
+

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Current Weather{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<h1>Current Weather</h1>
+<h1>{{ city.city_name }}, {{ city.city_country }}</h1>
+  {% for d in data %}
+    <article class="weather data">
+      <header>
+        <div>
+          <div class="about">Last Updated UTC: {{ d.lastupdate_value}}  </div>
+        </div>
+      </header>
+      <p class="body">UTC Sunrise: {{ d.city_sun_rise }}, Sunset: {{ d.city_sun_set }}, Offset: {{ d.timezone_offset}}</p>
+      <p class="body">Temperature: {{ d.temperature_value }}, Max Temp: {{ d.temperature_max }}, Min Temp: {{ d.temperature_min }}</p>
+      <div>
+          <div class="about">Date Time UTC: {{ d.timestamp}}  </div>
+        </div>
+    </article>
+    {% if not loop.last %}
+      <hr>
+    {% endif %}
+  {% endfor %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Search for City by Coordinates{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <label for="coordinate">coordinate format: (latitude,longitude)</label>
+    <input name="coordinate" id="coordinate" required>
+    <input type="submit" value="Submit">
+  </form>
+  <form action="{{ url_for('cities.search_by_coordinates') }}" method="get">
+    <input class="return" type="submit" value="Cancel">
+  </form>
+{% endblock %}
