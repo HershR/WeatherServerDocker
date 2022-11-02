@@ -42,10 +42,6 @@ def create_app():
             #todo Uncomment to Start Scheduler
             scheduler.start()
 
-        #from . import cat
-        #app.register_blueprint(cat.bp)
-        #app.add_url_rule('/', endpoint='cat')
-
         from . import weather
         app.register_blueprint(weather.bp)
 

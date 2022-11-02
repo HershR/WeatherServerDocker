@@ -1,7 +1,7 @@
 version: "3.6"
 services:
   web:
-    image: hershr/flaskweatherapp
+    build: web
     restart: always
     ports:
       - 5000:5000
@@ -12,7 +12,7 @@ services:
     networks:
       - flask_network
   proxy:
-    image: hershr/weatherapp_proxy
+    build: proxy
     restart: always
     ports:
       - 80:80

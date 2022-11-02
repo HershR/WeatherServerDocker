@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 SCHEDULER_API_ENABLED = True
 
 OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
-WEATHER_DATA_PATH = "web/HistoricalWeatherData"
+WEATHER_DATA_PATH = "HistoricalWeatherData"
 
 pg_user = os.getenv("POSTGRES_USER")
 pg_pass = os.getenv("POSTGRES_PASSWORD")

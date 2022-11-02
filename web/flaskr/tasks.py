@@ -4,8 +4,8 @@ from .extensions import scheduler
 
 # task intervals
 # in seconds
-update_current_interval = 60  #3600  # one hour
-update_forecast_interval = 120  #86400  # one day
+update_current_interval = 3600  # one hour
+update_forecast_interval = 86400  # one day
 
 
 #updated the current weather for all cities
