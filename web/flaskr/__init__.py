@@ -18,9 +18,7 @@ def create_app():
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
 
-    # config file should be in instance folder
     app.config.from_object('config')
-
 
     db.init_app(app)
     migrate.init_app(app, db)

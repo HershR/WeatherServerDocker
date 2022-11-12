@@ -64,13 +64,7 @@ from flaskr.models import *
 
 db.create_all(app=create_app())
 ```
-## Run Locally
-```
-$ set FLASK_APP=flaskr
-$ set FLASK_ENV=development
-$ set FLASK_DEBUG=1
-$ flask run
-```
+
 ## Change/Update Database Tables
 If you update the table models in models.py run the following python code in the weather app container
 ```
@@ -86,5 +80,11 @@ $ flask db upgrade
 - Run the app and click Import All and wait
 - or chose the specific cities to import
 
+## Helpful Endpoints
+- server_address/cities/get/all - returns the data(not weather) of all the currently tracked cities in an array
+formatted:[{city_id,city_name,city_coord_lat,city_coord_long,city_country},...]
+- server_address/city_id/get/'latitude,longitude'
+returns the city id if the given lat and long match a city that is currently tracked
+- ex: .../city_id/get/23,54, -104.45
 
-Requires docker and docker compose
+Requires docker and docker compose installed

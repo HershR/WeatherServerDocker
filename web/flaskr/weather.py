@@ -75,11 +75,10 @@ def update_current_weather(city_id):
     city = OwmCities.query.filter_by(city_id=city_id).first()
     if city is None:
         abort(404, f"City id {city_id} doesn't exist.")
-    else:
-        latitude = city.city_coord_lat
-        longitude = city.city_coord_long
-        if latitude is None or longitude is None:
-            error = 'Update Current Weather Error: coordinates missing for city: ' + city.city_name
+    latitude = city.city_coord_lat
+    longitude = city.city_coord_long
+    if latitude is None or longitude is None:
+        error = 'Update Current Weather Error: coordinates missing for city: ' + city.city_name
 
     if error is None:
         # get weather data in xml format
@@ -299,6 +298,7 @@ def weather_import(filename):
                     precipitation_value_mm = 0
                     precipitation_mode = 'no'
 
+                # kelvin to Celsius
                 temp = round(float(line['temp']) - 273.15, 2)
                 temp_min = round(float(line['temp_min']) - 273.15, 2)
                 temp_max = round(float(line['temp_max']) - 273.15, 2)
@@ -439,3 +439,37 @@ def import_all():
             weather_import(f)
     flash("Imported all data")
     return redirect(url_for('cities.index'))
+
+
+#returns all the cities as an array of dictionaries
+# [{city_id,city_name,city_coord_lat,city_coord_long,city_country},...]
+@bp.route('/cities/get/all')
+def get_city_ids():
+    cities = OwmCities.query.all()
+    data = []
+    for c in cities:
+        data.append(row2dict(c))
+    return json.dumps(data)
+
+
+#get city id based on lat,long coordinate
+@bp.route('/city_id/get/<string:coord>')
+def get_city_id(coord):
+    coord.replace(' ', '')
+    coordinates = coord.split(',')
+    lat = coordinates[0]
+    long = coordinates[1]
+    city = OwmCities.query.filter_by(city_coord_lat=lat, city_coord_long=long).first()
+    if city is None:
+        url = "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}"\
+            .format(lat=lat, lon=long, key=owm_api_key)
+        r = requests.get(url)
+        if r.status_code != 200:
+            abort(404, 'Cannot find city or weather station for {}, {}'.format(lat, long))
+        else:
+            data = r.json()
+            city = OwmCities.query.filter_by(city_id=data['id']).first()
+            if city is None:
+                abort(404, 'Not tracking weather for location at {}, {}'.format(lat, long))
+    return json.dumps(city.city_id)
+

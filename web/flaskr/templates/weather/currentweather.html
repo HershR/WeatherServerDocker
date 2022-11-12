@@ -11,14 +11,14 @@
     <article class="weather data">
       <header>
         <div>
-          <div class="about">Last Updated UTC: {{ d.lastupdate_value}}  </div>
+          <div class="about">Date Time UTC: {{ d.timestamp}}  </div>
         </div>
       </header>
       <p class="body">UTC Sunrise: {{ d.city_sun_rise }}, Sunset: {{ d.city_sun_set }}, Offset: {{ d.timezone_offset}}</p>
       <p class="body">Temperature: {{ d.temperature_value }}, Max Temp: {{ d.temperature_max }}, Min Temp: {{ d.temperature_min }}</p>
       <div>
-          <div class="about">Date Time UTC: {{ d.timestamp}}  </div>
-        </div>
+        <div class="about">Last Updated UTC: {{ d.lastupdate_value}}  </div>
+      </div>
     </article>
     {% if not loop.last %}
       <hr>
