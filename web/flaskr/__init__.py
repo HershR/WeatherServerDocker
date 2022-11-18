@@ -37,7 +37,6 @@ def create_app():
             pass
         else:
             from . import tasks  # noqa: F401
-            #todo Uncomment to Start Scheduler
             scheduler.start()
 
         from . import weather

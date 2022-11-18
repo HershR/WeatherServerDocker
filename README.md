@@ -81,7 +81,7 @@ $ flask db upgrade
 - or chose the specific cities to import
 
 ## Helpful Endpoints
-- server_address/cities/get/all - returns the data(not weather) of all the currently tracked cities in an array
+- server_address/city_data/get/all - returns the data(not weather) of all the currently tracked cities in an array
 formatted:[{city_id,city_name,city_coord_lat,city_coord_long,city_country},...]
 - server_address/city_id/get/'latitude,longitude'
 returns the city id if the given lat and long match a city that is currently tracked

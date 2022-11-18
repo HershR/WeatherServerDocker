@@ -24,6 +24,7 @@
             </div>
             <div class="column">
               <a class="action" href="{{ url_for('weather.import_data', city_id=city.city_id) }}">Import</a>
+              <a class="action" href="{{ url_for('weather.remove_city', city_id=city.city_id) }}">Remove</a>
             </div>
             </div>
         </div>

@@ -299,10 +299,10 @@ def weather_import(filename):
                     precipitation_mode = 'no'
 
                 # kelvin to Celsius
-                temp = round(float(line['temp']) - 273.15, 2)
-                temp_min = round(float(line['temp_min']) - 273.15, 2)
-                temp_max = round(float(line['temp_max']) - 273.15, 2)
-                feels_like = round(float(line['feels_like']) - 273.15, 2)
+                temp = round(float(line['temp']), 2)
+                temp_min = round(float(line['temp_min']), 2)
+                temp_max = round(float(line['temp_max']), 2)
+                feels_like = round(float(line['feels_like']), 2)
                 weather = OwmCurrentWeather(city_id=city_id,
                                             timezone_offset=int(line['timezone']),
                                             timestamp=timestamp,
@@ -359,6 +359,18 @@ def current_forecast(city_id):
         .filter_by(city_id=city_id) \
         .all()
     return render_template('weather/currentforecast.html', city=city, data=data)
+
+
+@bp.route('/weather/remove/<int:city_id>', methods=('GET', 'POST'))
+def remove_city(city_id):
+    city = OwmCities.query.filter_by(city_id=city_id).first()
+    if city is None:
+        abort(404, f"City id {city_id} doesn't exist.")
+    db.session.query(OwmCurrentWeather).filter_by(city_id=city_id).delete()
+    db.session.query(OwmHourlyWeatherForecast).filter_by(city_id=city_id).delete()
+    db.session.delete(city)
+    db.session.commit()
+    return redirect(url_for('cities.index'))
 
 
 # todo find reliable way to convert sqlalchemy results to json
@@ -443,7 +455,7 @@ def import_all():
 
 #returns all the cities as an array of dictionaries
 # [{city_id,city_name,city_coord_lat,city_coord_long,city_country},...]
-@bp.route('/cities/get/all')
+@bp.route('/city_data/get/all')
 def get_city_ids():
     cities = OwmCities.query.all()
     data = []
