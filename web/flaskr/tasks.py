@@ -3,7 +3,7 @@ from .extensions import scheduler
 
 
 #updated the current weather for all cities
-@scheduler.task('interval', id='update_current_weather_all', seconds=10, misfire_grace_time=900)
+@scheduler.task('cron', id='update_current_weather_all', minute=0, misfire_grace_time=900)
 def update_current_weather_all():
     print("update current all")
     with scheduler.app.app_context():
@@ -11,7 +11,7 @@ def update_current_weather_all():
             update_current_weather(id)
 
 #update the current forecast for all cities
-@scheduler.task('cron', id='update_forecast_all', second=30, misfire_grace_time=900)
+@scheduler.task('cron', id='update_forecast_all', hour=0, misfire_grace_time=900)
 def update_current_forecast_all():
     print("update forecast all")
     with scheduler.app.app_context():
