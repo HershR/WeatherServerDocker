@@ -79,7 +79,11 @@ def update_current_weather(city_id):
         error = 'Update Current Weather Error: coordinates missing for city: ' + city.city_name
 
     if error is None:
-        # get weather data in xml format
+        timestamp = datetime.datetime.utcnow().replace(microsecond=0)
+        exits = OwmCurrentWeather.query.filter_by(city_id=city_id, timestamp=timestamp).first()
+        if exits:
+            return
+            # get weather data in xml format
         url = "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}&units=metric&mode=xml".format(
             lat=latitude, lon=longitude, key=owm_api_key)
         r = requests.get(url)
@@ -90,7 +94,6 @@ def update_current_weather(city_id):
             # convert timestamps to datetime
             sunrise = datetime.datetime.strptime(data['city']['sun']['rise'], "%Y-%m-%dT%H:%M:%S")
             sunset = datetime.datetime.strptime(data['city']['sun']['set'], "%Y-%m-%dT%H:%M:%S")
-            timestamp = datetime.datetime.utcnow().replace(microsecond=0)
             lastupdate_value = datetime.datetime.strptime(data['lastupdate']['value'], "%Y-%m-%dT%H:%M:%S")
 
             # check for wind
@@ -277,7 +280,7 @@ def weather_import(filename):
 
             for line in data:
                 timestamp = datetime.datetime.utcfromtimestamp(int(line['dt']))
-                entry = db.session.query(OwmCurrentWeather).filter_by(timestamp=timestamp).first()
+                entry = db.session.query(OwmCurrentWeather).filter_by(city_id=city_id, timestamp=timestamp).first()
                 if entry is not None:
                     continue
 
@@ -436,16 +439,19 @@ def import_data(city_id):
         if os.path.isfile(f) and f.endswith('.csv'):
             if city.city_name.lower() in f:
                 weather_import(f)
-                return current_weather(city_id)
+                flash("Imported data for " + city.city_name)
+                return redirect(url_for('cities.index'))
     flash("No file to import data for " + city.city_name)
     return redirect((url_for('cities.index')))
 
 
 @bp.route('/weather/import/all', methods=('GET', 'POST'))
 def import_all():
+    flash("Importing")
     for filename in os.listdir(historical_data_path):
         f = os.path.join(historical_data_path, filename)
         if os.path.isfile(f) and f.endswith('.csv'):
+            print('import' + f)
             weather_import(f)
     flash("Imported all data")
     return redirect(url_for('cities.index'))

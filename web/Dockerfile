@@ -9,4 +9,3 @@ RUN pip install --no-cache-dir -r requirements.txt
  COPY . /code/
 EXPOSE 5000
 CMD python run.py
-#CMD gunicorn --bind 0.0.0.0:5000 -w 3 run:app

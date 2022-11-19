@@ -1,4 +1,5 @@
 import os
+from pytz import utc
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -8,6 +9,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 #FLASK_RUN_PORT = 5000
 
 SCHEDULER_API_ENABLED = True
+SCHEDULER_TIMEZONE = utc
 
 OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
 WEATHER_DATA_PATH = "HistoricalWeatherData"
