@@ -4,6 +4,7 @@ from .extensions import db, migrate, scheduler
 
 
 def create_app():
+
     def is_debug_mode():
         """Get app debug status."""
         debug = os.environ.get("FLASK_DEBUG")
@@ -16,7 +17,7 @@ def create_app():
         return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
 
     # create and configure the app
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__)
 
     app.config.from_object('config')
 
@@ -46,4 +47,4 @@ def create_app():
         app.register_blueprint(cities.bp)
         app.add_url_rule('/', endpoint='index')
 
-    return app
+        return app
