@@ -13,7 +13,7 @@ import datetime
 import csv
 
 from flask import (
-    current_app, Blueprint, flash, redirect, render_template, url_for
+    current_app, Blueprint, flash, redirect, render_template, request,url_for
 )
 
 from werkzeug.exceptions import abort
@@ -36,17 +36,17 @@ def city_ids():
     return id
 
 
-def add_city(lat, long):
+def add_city(latitude, longitude):
     error = None
-    if lat is None or long is None:
+    if latitude is None or longitude is None:
         print('Add City Error: Latitude or Longitude is missing')
         return
 
-    url = "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}".format(lat=lat, lon=long, key=owm_api_key)
+    url = "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}".format(lat=latitude, lon=longitude, key=owm_api_key)
     r = requests.get(url)
     if r.status_code != 200:
         print('Add City Error: Request failed Status code: ' + str(r.status_code))
-        print('Can not get data for city at {}, {}'.format(lat, long))
+        print('Can not get data for city at {}, {}'.format(latitude, longitude))
     else:
         data = r.json()
         city = OwmCities.query.filter_by(city_id=data['id']).first()
@@ -457,35 +457,89 @@ def import_all():
     return redirect(url_for('cities.index'))
 
 
-#returns all the cities as an array of dictionaries
-# [{city_id,city_name,city_coord_lat,city_coord_long,city_country},...]
-@bp.route('/city_data/get/all')
+'API CALLS'
+#returns all the cities and their location data
+# {city_name:{city_id,city_name,city_coord_lat,city_coord_long,city_country},...}
+@bp.route('/get_location_data')
+def get_city_data():
+    cities = OwmCities.query.all()
+    data = dict()
+    for c in cities:
+        row = row2dict(c)
+        data[row['city_name']] = row
+    return json.dumps(data)
+
+
+#returns all the cities and their corresponding ids
+#format: /get_location_ids
+@bp.route('/get_location_ids')
 def get_city_ids():
     cities = OwmCities.query.all()
-    data = []
+    data = dict()
     for c in cities:
-        data.append(row2dict(c))
+        row = (row2dict(c))
+        data[row['city_name']] = row['city_id']
     return json.dumps(data)
 
 
 #get city id based on lat,long coordinate
-@bp.route('/city_id/get/<string:coord>')
-def get_city_id(coord):
-    coord.replace(' ', '')
-    coordinates = coord.split(',')
-    lat = coordinates[0]
-    long = coordinates[1]
-    city = OwmCities.query.filter_by(city_coord_lat=lat, city_coord_long=long).first()
+#format: /get_location_id?lat=<latitude>&long=<longitude>
+@bp.route('/get_location_id')
+def get_city_id():
+    latitude = request.args.get('lat', type=float)
+    longitude = request.args.get('long', type=float)
+    city = OwmCities.query.filter_by(city_coord_lat=latitude, city_coord_long=longitude).first()
     if city is None:
-        url = "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}"\
-            .format(lat=lat, lon=long, key=owm_api_key)
+        url = "http://api.openweathermap.org/geo/1.0/reverse?lat={lat}&lon={lon}&limit={limit}&appid={key}" \
+            .format(lat=latitude, lon=longitude, limit=1, key=owm_api_key)
         r = requests.get(url)
         if r.status_code != 200:
-            abort(404, 'Cannot find city or weather station for {}, {}'.format(lat, long))
+            abort(404, 'Cannot find city or weather station for {}, {}'.format(latitude, longitude))
         else:
             data = r.json()
-            city = OwmCities.query.filter_by(city_id=data['id']).first()
+            if not data:
+                abort(404, 'Cannot find city or weather station for {}, {}'.format(latitude, longitude))
+            name = data[0]['name']
+            name = name.replace("City of ", "")
+            city = OwmCities.query.filter_by(city_name=name, city_country=data[0]['country']).first()
             if city is None:
-                abort(404, 'Not tracking weather for location at {}, {}'.format(lat, long))
+                abort(404, 'Not tracking weather for location at {}, {}'.format(latitude, longitude))
     return json.dumps(city.city_id)
 
+# returns the weather for a city at a given time
+# format /get_weather_by_date?id=<location id>&date=<iso-8601 utc timestamp>
+@bp.route('/get_weather_by_date', methods=('GET', 'POST'))
+def get_weather_by_date():
+    city_id = request.args.get('id', type=int)
+    date = request.args.get('date')
+    weather = {'type': 'current', 'is_found': True}
+    data = OwmCurrentWeather.query \
+        .filter_by(city_id=city_id, timestamp=date).first()
+
+    if data is None:
+        weather['is_found'] = False
+        # find closest current
+        current = row2dict(OwmCurrentWeather.query
+                                .filter(OwmCurrentWeather.city_id == city_id, OwmCurrentWeather.timestamp >= date)
+                                .order_by(OwmCurrentWeather.timestamp.asc()).first())
+
+        #find closest forcast
+        forecast = row2dict(OwmHourlyWeatherForecast.query
+                               .filter(OwmHourlyWeatherForecast.city_id == city_id, OwmHourlyWeatherForecast.forecast_timestamp >= date)
+                               .order_by(OwmHourlyWeatherForecast.forecast_timestamp.asc()).first())
+
+        if forecast is None and current is None:
+            return json.dumps(dict())
+        if forecast is not None and current is None:
+            weather['type'] = 'forecast'
+            row = forecast
+        elif forecast is None and current is not None:
+            row = current
+        elif current['timestamp'] > forecast['forecast_timestamp']:
+            weather['type'] = 'forecast'
+            row = forecast
+        else:
+            row = current
+    else:
+        row = row2dict(data)
+    return json.dumps(weather | row)
