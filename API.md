@@ -93,5 +93,5 @@ Example Output
 ```
 Fields in Response
 - type: current or forecast
-- is_found: True is data for the given time was found in the hourly updated database.
+- is_found: True if data matches exact time and is from OwmCurrentWeather db table.
 - rest refer to [current](https://openweathermap.org/current) or [forecast](https://openweathermap.org/forecast5)

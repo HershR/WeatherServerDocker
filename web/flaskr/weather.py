@@ -512,20 +512,25 @@ def get_city_id():
 def get_weather_by_date():
     city_id = request.args.get('id', type=int)
     date = request.args.get('date')
+    dt = datetime.datetime.fromisoformat(date)
+
     weather = {'type': 'current', 'is_found': True}
     data = OwmCurrentWeather.query \
         .filter_by(city_id=city_id, timestamp=date).first()
 
     if data is None:
         weather['is_found'] = False
+        # limit search to entire day
+        nextdt = dt.replace(hour=23, minute=59, second=59)
+
         # find closest current
         current = row2dict(OwmCurrentWeather.query
-                                .filter(OwmCurrentWeather.city_id == city_id, OwmCurrentWeather.timestamp >= date)
+                                .filter(OwmCurrentWeather.city_id == city_id, OwmCurrentWeather.timestamp >= dt, OwmCurrentWeather.timestamp <= nextdt)
                                 .order_by(OwmCurrentWeather.timestamp.asc()).first())
 
         #find closest forcast
         forecast = row2dict(OwmHourlyWeatherForecast.query
-                               .filter(OwmHourlyWeatherForecast.city_id == city_id, OwmHourlyWeatherForecast.forecast_timestamp >= date)
+                               .filter(OwmHourlyWeatherForecast.city_id == city_id, OwmHourlyWeatherForecast.forecast_timestamp >= dt, OwmHourlyWeatherForecast.forecast_timestamp <= nextdt)
                                .order_by(OwmHourlyWeatherForecast.forecast_timestamp.asc()).first())
 
         if forecast is None and current is None:
@@ -542,4 +547,5 @@ def get_weather_by_date():
             row = current
     else:
         row = row2dict(data)
+    row.pop('id')
     return json.dumps(weather | row)
