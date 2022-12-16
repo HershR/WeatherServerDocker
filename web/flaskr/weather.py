@@ -4,7 +4,7 @@
 # the database with weather data
 # Also contains the page routes to display
 # the data in db
-# note: not all inserted field contains correct values,
+# Contains API to query db
 import os
 import xmltodict
 import json
@@ -67,8 +67,7 @@ def add_city(latitude, longitude):
 # able to call with free api key
 def update_current_weather(city_id):
     error = None
-    latitude = None
-    longitude = None
+
     # check is city is being tracked
     city = OwmCities.query.filter_by(city_id=city_id).first()
     if city is None:
@@ -76,14 +75,12 @@ def update_current_weather(city_id):
     latitude = city.city_coord_lat
     longitude = city.city_coord_long
     if latitude is None or longitude is None:
-        error = 'Update Current Weather Error: coordinates missing for city: ' + city.city_name
+        error = 'Update Current Weather Error: coordinates missing for city: ' + str(city_id)
 
     if error is None:
         timestamp = datetime.datetime.utcnow().replace(microsecond=0)
-        exits = OwmCurrentWeather.query.filter_by(city_id=city_id, timestamp=timestamp).first()
-        if exits:
-            return
-            # get weather data in xml format
+
+        # get weather data in xml format
         url = "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}&units=metric&mode=xml".format(
             lat=latitude, lon=longitude, key=owm_api_key)
         r = requests.get(url)
@@ -139,34 +136,35 @@ def update_current_weather(city_id):
             db.session.add(weather)
             db.session.commit()
         else:
-            error = 'Update Current Weather Error: Failed to connect to Open Weather API\nstatus code: ' + str(
-                r.status_code)
-    return error
+            error = 'Update Current Weather Error: {} Failed to connect to Open Weather API\nstatus code: {}'.format(city_id, r.status_code)
+    if error is not None:
+        print(error)
+    return
 
 
 # will give forecast for a city,
 # in 3h intervals
 # if days is 1, will get the next 24hours forecast
 # able to call with free api key
-def update_forcast_3h(city_id, days=2):
+def update_forcast_3h(city_id, days=5):
     # ensure days is within range
     if days < 1:
         days = 1
     if days > 5:
         days = 5
     timestamps = days * 8  # number of timestamps to receive from api call, 8 timestamps per day
+
     error = None
-    latitude = longitude = None
 
     # check is city is being tracked
     city = OwmCities.query.filter_by(city_id=city_id).first()
     if city is None:
         abort(404, f"City id {city_id} doesn't exist.")
-    else:
-        latitude = city.city_coord_lat
-        longitude = city.city_coord_long
-        if latitude is None or longitude is None:
-            error = 'Update Weather Hourly Error: coordinates missing for city: ' + city.city_name
+
+    latitude = city.city_coord_lat
+    longitude = city.city_coord_long
+    if latitude is None or longitude is None:
+        error = 'Update Weather Hourly Error: coordinates missing for city: ' + str(city_id)
     if error is None:
         url = 'http://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&units=metric&cnt={count}&appid={key}&mode=xml'.format(
             lat=latitude, lon=longitude, count=timestamps, key=owm_api_key)
@@ -177,13 +175,6 @@ def update_forcast_3h(city_id, days=2):
 
             request_timestamp = datetime.datetime.utcnow().replace(microsecond=0)
             for i in range(0, timestamps):
-                exist = OwmHourlyWeatherForecast.query.filter_by(city_id=city_id,
-                                                                 forecast_timestamp=data['forecast']['time'][i][
-                                                                     'from']).first()
-
-                if exist is not None:
-                    continue
-
                 # convert timestamps to datetime
                 sunrise = datetime.datetime.strptime(data['sun']['rise'], "%Y-%m-%dT%H:%M:%S")
                 sunset = datetime.datetime.strptime(data['sun']['set'], "%Y-%m-%dT%H:%M:%S")
@@ -202,6 +193,7 @@ def update_forcast_3h(city_id, days=2):
                     wind_direction_value_deg = data['forecast']['time'][i]['windDirection']['deg']
                     wind_direction_code = data['forecast']['time'][i]['windDirection']['code']
                     wind_direction_name = data['forecast']['time'][i]['windDirection']['name']
+
 
                 weather = OwmHourlyWeatherForecast(forecast_timestamp=forecast_timestamp,
                                                    city_id=city_id,
@@ -242,9 +234,10 @@ def update_forcast_3h(city_id, days=2):
                 db.session.add(weather)
             db.session.commit()
         else:
-            error = 'Update Weather Hourly Error: Failed to connect to Open Weather API\nstatus code: ' + str(
-                r.status_code)
-    return error
+            error = 'Update Current Weather Error: {} Failed to connect to Open Weather API\nstatus code: {}'.format(city_id, r.status_code)
+    if error is not None:
+        print(error)
+    return
 
 
 # reads a csv file containing historical weather data for a city
@@ -299,18 +292,17 @@ def weather_import(filename):
                     precipitation_value_mm = 0
                     precipitation_mode = 'no'
 
-                # kelvin to Celsius
-                temp = round(float(line['temp']), 2)
-                temp_min = round(float(line['temp_min']), 2)
-                temp_max = round(float(line['temp_max']), 2)
-                feels_like = round(float(line['feels_like']), 2)
+                #temp = round(float(line['temp']), 2)
+                #temp_min = round(float(line['temp_min']), 2)
+                #temp_max = round(float(line['temp_max']), 2)
+                #feels_like = round(float(line['feels_like']), 2)
                 weather = OwmCurrentWeather(city_id=city_id,
                                             timezone_offset=int(line['timezone']),
                                             timestamp=timestamp,
-                                            temperature_value=temp,
-                                            temperature_min=temp_min,
-                                            temperature_max=temp_max,
-                                            feels_like_value=feels_like,
+                                            temperature_value=float(line['temp']),
+                                            temperature_min=float(line['temp_min']),
+                                            temperature_max=float(line['temp_max']),
+                                            feels_like_value=float(line['feels_like']),
                                             humidity_value=int(line['humidity']),
                                             pressure_value=int(line['pressure']),
                                             wind_speed_value=float(line['wind_speed']),
@@ -324,7 +316,9 @@ def weather_import(filename):
                                             )
                 db.session.add(weather)
             db.session.commit()
-    return error
+    if error is not None:
+        print(error)
+    return
 
 
 # Routes
@@ -513,7 +507,6 @@ def get_weather_by_date():
     city_id = request.args.get('id', type=int)
     date = request.args.get('date')
     dt = datetime.datetime.fromisoformat(date)
-
     weather = {'type': 'current', 'is_found': True}
     data = OwmCurrentWeather.query \
         .filter_by(city_id=city_id, timestamp=date).first()
@@ -521,17 +514,22 @@ def get_weather_by_date():
     if data is None:
         weather['is_found'] = False
         # limit search to entire day
-        nextdt = dt.replace(hour=23, minute=59, second=59)
+        dtrange = dt.replace(hour=23, minute=59, second=59)
 
         # find closest current
         current = row2dict(OwmCurrentWeather.query
-                                .filter(OwmCurrentWeather.city_id == city_id, OwmCurrentWeather.timestamp >= dt, OwmCurrentWeather.timestamp <= nextdt)
-                                .order_by(OwmCurrentWeather.timestamp.asc()).first())
+                           .filter(OwmCurrentWeather.city_id == city_id,
+                                   OwmCurrentWeather.timestamp >= dt,
+                                   OwmCurrentWeather.timestamp <= dtrange)
+                           .order_by(OwmCurrentWeather.timestamp.asc()).first())
 
         #find closest forcast
         forecast = row2dict(OwmHourlyWeatherForecast.query
-                               .filter(OwmHourlyWeatherForecast.city_id == city_id, OwmHourlyWeatherForecast.forecast_timestamp >= dt, OwmHourlyWeatherForecast.forecast_timestamp <= nextdt)
-                               .order_by(OwmHourlyWeatherForecast.forecast_timestamp.asc()).first())
+                            .filter(OwmHourlyWeatherForecast.city_id == city_id,
+                                    OwmHourlyWeatherForecast.forecast_timestamp >= dt,
+                                    OwmHourlyWeatherForecast.forecast_timestamp <= dtrange)
+                            .order_by(OwmHourlyWeatherForecast.forecast_timestamp.asc(),
+                                      OwmHourlyWeatherForecast.request_timestamp.desc()).first())
 
         if forecast is None and current is None:
             return json.dumps(dict())
@@ -549,3 +547,4 @@ def get_weather_by_date():
         row = row2dict(data)
     row.pop('id')
     return json.dumps(weather | row)
+
