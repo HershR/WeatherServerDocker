@@ -178,7 +178,7 @@ def update_forcast_3h(city_id, days=5):
                 # convert timestamps to datetime
                 sunrise = datetime.datetime.strptime(data['sun']['rise'], "%Y-%m-%dT%H:%M:%S")
                 sunset = datetime.datetime.strptime(data['sun']['set'], "%Y-%m-%dT%H:%M:%S")
-                forecast_timestamp = datetime.datetime.strptime(data['forecast']['time'][i]['from'],
+                forecast_timestamp = datetime.datetime.strptime(data['forecast']['time'][i]['to'],
                                                                 "%Y-%m-%dT%H:%M:%S").replace(microsecond=0)
                 lastupdate_value = None
                 if data['meta']['lastupdate'] is not None:
@@ -371,6 +371,8 @@ def remove_city(city_id):
 # todo find reliable way to convert sqlalchemy results to json
 
 def row2dict(row):
+    if row is None:
+        return
     d = {}
     for column in row.__table__.columns:
         if isinstance(column, datetime.date):
