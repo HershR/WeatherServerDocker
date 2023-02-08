@@ -273,6 +273,7 @@ def weather_import(filename):
 
             for line in data:
                 timestamp = datetime.datetime.utcfromtimestamp(int(line['dt']))
+                last_update = datetime.datetime.utcnow()
                 entry = db.session.query(OwmCurrentWeather).filter_by(city_id=city_id, timestamp=timestamp).first()
                 if entry is not None:
                     continue
@@ -299,6 +300,7 @@ def weather_import(filename):
                 weather = OwmCurrentWeather(city_id=city_id,
                                             timezone_offset=int(line['timezone']),
                                             timestamp=timestamp,
+                                            lastupdate_value=last_update,
                                             temperature_value=float(line['temp']),
                                             temperature_min=float(line['temp_min']),
                                             temperature_max=float(line['temp_max']),
