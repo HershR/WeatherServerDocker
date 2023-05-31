@@ -59,6 +59,10 @@ def add_city(latitude, longitude):
                              )
             db.session.add(city)
             db.session.commit()
+
+            #update current and update forcast
+            update_current_weather(city_id=city.city_id)
+            update_forcast_3h(city_id=city.city_id)
         return city.city_id
 
 
