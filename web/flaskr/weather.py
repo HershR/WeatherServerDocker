@@ -283,7 +283,7 @@ def weather_import(filename):
                     continue
 
                 if line['visibility']:
-                    visibility_value_m = int(line['visibility'])
+                    visibility_value_m = int(float(line['visibility']))
                 else:
                     visibility_value_m = None
 
